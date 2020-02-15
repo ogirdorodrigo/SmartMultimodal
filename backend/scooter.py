@@ -1,10 +1,12 @@
 import requests
 import json
+from os.path import join as pjoin
 
-def get_available_scooters():
-    # Open weather api key
+def get_scooters_batch():
+    # Entry point to Tier complete dataset
     url = "https://platform.tier-services.io/mds/BERLIN/trips"
 
+    # Request parameters
     payload = {}
     headers = {
         'x-api-key': 'gXKxBRaZsYaXUyMyyvpKxADg',
@@ -12,8 +14,49 @@ def get_available_scooters():
     }
 
     response = requests.request("GET", url, headers=headers, data=payload)
+    data = json.loads(response.text.encode('utf8'))
+    trips = data.get('data').get('trips')
+    next_link = data.get('links').get('next')
 
-    return response.text.encode('utf8')
+    return trips, next_link
+
+def download_tier_dataset():
+    """Tier provides only a static dataset containing the following fields for each trip of the corresponding
+    scooters (example):
+    'provider_id': '264aad41-b47c-415d-8585-0208d436516e',
+    'provider_name': 'Tier',
+    'device_id': '907cd31e-8310-426b-ab01-020ad0ca7653',
+    'vehicle_id': '221442',
+    'vehicle_type': 'scooter',
+    'propulsion_type': ['electric'],
+    'trip_id': '048909eb-0008-5db5-bc19-edb134b50506',
+    'trip_duration': 1980,
+    'trip_distance': 9900,
+    'route': {'type': 'FeatureCollection',
+     'features': [{'type': 'Feature',
+       'geometry': {'type': 'Point', 'coordinates': [13.388497, 52.518546]},
+       'properties': {'timestamp': 1580588718000}},
+      {'type': 'Feature',
+       'geometry': {'type': 'Point', 'coordinates': [13.368137, 52.510468]},
+       'properties': {'timestamp': 1580590690000}}]},
+    'accuracy': 20,
+    'start_time': 1580588718000,
+    'end_time': 1580590690000},
+    """
+    dataset = []
+    next_page = 'start'
+    i = 0
+    while next_page is not None:
+        new_batch, next_page = get_scooters_batch()
+        dataset += new_batch
+        i += 1
+        print(i, len(dataset))
+
+    with open(pjoin('data', 'tier_scooters.json'), 'w') as f:
+        json.dump(dataset, f)
+
+    return dataset
+
 
 if __name__ == "__main__":
-    print(get_available_scooters())
+    download_tier_dataset()
