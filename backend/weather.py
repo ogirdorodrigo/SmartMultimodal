@@ -6,6 +6,7 @@ def get_weather_description(lon: float, lat: float):
     with open('backend/weatherapi_key.txt', 'r') as f:
         weatherapi_key = f.read()[:]
 
+
     # Request weather data by coordinate
     surl = f'http://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&units=metric&appid={weatherapi_key}'
     r = requests.get(url=surl)
