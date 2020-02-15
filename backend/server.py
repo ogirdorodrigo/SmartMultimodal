@@ -1,7 +1,8 @@
-from flask import Flask
+from flask import Flask, request
 import googlemaps
 from datetime import datetime
 import polyline
+import json
 
 with open('backend/google_key.txt', 'r') as f:
     google_key = f.read()
@@ -13,9 +14,40 @@ gmaps = googlemaps.Client(key=google_key)
 def hello_world():
     return 'Hello, World!'
 
-def get_polyline_from_direction(direction):
-    encoded = direction["overview_polyline"]["points"]
-    return polyline.decode(encoded)
+@app.rout('/direction')
+def get_direction():
+    start = request.args.get("start")
+    end = request.args.get("end")
+    mode = request.args.get("mode")
+
+    directions_result = gmaps.directions(start,
+                                    end,
+                                    mode=mode,
+                                    departure_time=now)[0]
+
+    #TODO what to return?
+    """
+    distance
+    duration
+    arrival_time
+    steps
+        distance
+        duration
+        polyline
+        travel_mode
+    overview_polyline
+    """
+    response = {
+        "distance": directions_result["distance"]["value"],
+        "duration": directions_result["duration"]["value"],
+        "arrival_time": directions_result["arrival_time"]["value"],
+        "steps": parse_steps(directions_result["steps"]),
+        "overview_polyline": polyline.decode(directions_result["overview_polyline"]["points"])
+    }
+    return json.dumps(response)
+
+def parse_steps(steps):
+    return ""
 
 if __name__ == "__main__":
     now = datetime.now()
