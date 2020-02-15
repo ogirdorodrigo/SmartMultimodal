@@ -1,0 +1,2 @@
+# Save api-keys as txt files and ignore them
+*.txt
