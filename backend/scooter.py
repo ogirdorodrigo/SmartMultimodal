@@ -2,10 +2,7 @@ import requests
 import json
 from os.path import join as pjoin
 
-def get_scooters_batch():
-    # Entry point to Tier complete dataset
-    url = "https://platform.tier-services.io/mds/BERLIN/trips"
-
+def get_scooters_batch(url):
     # Request parameters
     payload = {}
     headers = {
@@ -16,9 +13,9 @@ def get_scooters_batch():
     response = requests.request("GET", url, headers=headers, data=payload)
     data = json.loads(response.text.encode('utf8'))
     trips = data.get('data').get('trips')
-    next_link = data.get('links').get('next')
+    next_url = data.get('links').get('next')
 
-    return trips, next_link
+    return trips, next_url
 
 def download_tier_dataset():
     """Tier provides only a static dataset containing the following fields for each trip of the corresponding
@@ -44,16 +41,22 @@ def download_tier_dataset():
     'end_time': 1580590690000},
     """
     dataset = []
-    next_page = 'start'
+    next_page = True
     i = 0
-    while next_page is not None:
-        new_batch, next_page = get_scooters_batch()
+    # Entry point to Tier complete dataset
+    url = "https://platform.tier-services.io/mds/BERLIN/trips"
+    f = open(pjoin('..', 'data', 'tier_scooters.json'), 'a')
+    while next_page:
+        try:
+            new_batch, url = get_scooters_batch(url)
+        except:
+            next_page = False
         dataset += new_batch
         i += 1
         print(i, len(dataset))
+        json.dump(new_batch, f)
 
-    with open(pjoin('data', 'tier_scooters.json'), 'w') as f:
-        json.dump(dataset, f)
+    f.close()
 
     return dataset
 
