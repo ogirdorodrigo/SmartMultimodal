@@ -4,7 +4,7 @@ import json
 def get_weather_description(lon: float, lat: float):
     # Open weather api key
     with open('weatherapi_key.txt', 'r') as f:
-        weatherapi_key = f.read()[:-1]
+        weatherapi_key = f.read()
 
     # Request weather data by coordinate
     surl = f'http://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&units=metric&appid={weatherapi_key}'
