@@ -3,8 +3,8 @@ import json
 
 def get_weather_description(lon: float, lat: float):
     # Open weather api key
-    with open('weatherapi_key.txt', 'r') as f:
-        weatherapi_key = f.read()[:-1]
+    with open('backend/weatherapi_key.txt', 'r') as f:
+        weatherapi_key = f.read()[:]
 
     # Request weather data by coordinate
     surl = f'http://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&units=metric&appid={weatherapi_key}'
@@ -16,3 +16,10 @@ def get_weather_description(lon: float, lat: float):
     wind_direction = weather.get('wind').get('deg')  # units degrees
 
     return description, wind_speed, wind_direction
+
+def is_rain(description):
+    return ["Drizzle", "Rain", "Thunderstorm"] in description
+
+if __name__ == "__main__":
+    d,ws,wd = get_weather_description(52.453312, 13.384524)
+    print(wd)
