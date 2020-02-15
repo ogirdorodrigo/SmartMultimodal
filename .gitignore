@@ -1,2 +1,6 @@
 # Save api-keys as txt files and ignore them
 *.txt
+
+# Others to ignore
+*.idea
+*.ipynb_checkpoints
