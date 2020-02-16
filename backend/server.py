@@ -3,9 +3,9 @@ import googlemaps
 from datetime import datetime
 import polyline
 import json
-from backend.weather import get_weather_description, is_rain
+from weather import get_weather_description, is_rain
 
-with open('backend/google_key.txt', 'r') as f:
+with open('google_key.txt', 'r') as f:
     google_key = f.read()
 
 
@@ -25,11 +25,10 @@ def get_route():
     mode = "transit"
     now = datetime.now()
 
-    rout_result = gmaps.directions(start,
+    route_result = gmaps.directions(start,
                                     end,
                                     mode=mode,
                                     departure_time=now)[0]
-
     #TODO what to return?
     """
     distance
@@ -45,11 +44,11 @@ def get_route():
     #print(directions_result['legs'][0])
 
     response = {
-        "distance": rout_result['legs'][0]["distance"]["value"],
-        "duration": rout_result['legs'][0]["duration"]["value"],
+        "distance": route_result['legs'][0]["distance"]["value"],
+        "duration": route_result['legs'][0]["duration"]["value"],
         # "arrival_time": directions_result['legs'][0]["arrival_time"]["value"],
-        "steps": parse_steps(rout_result['legs'][0]["steps"]),
-        "overview_polyline": polyline.decode(rout_result["overview_polyline"]["points"])
+        "steps": parse_steps(route_result['legs'][0]["steps"]),
+        "overview_polyline": polyline.decode(route_result["overview_polyline"]["points"])
     }
     return f'{callback}({json.dumps(response)})'
 
