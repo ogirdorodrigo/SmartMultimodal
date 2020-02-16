@@ -1,6 +1,7 @@
 import requests
 import json
-from scipy.spatial import KDTree
+from sklearn.neighbors import DistanceMetric, BallTree
+import numpy as np
 
 def get_available_freebikes():
     # Available nextbikes that are not in stations
@@ -33,31 +34,36 @@ def get_available_stationbikes():
     return bikes, stations_coordinates
 
 
-def find_nearest_stations(lon: float, lat: float):
+def find_nearest_bikestations(lon: float, lat: float):
     """Return a dictionary with coordinate-tuples (keys) and number of available bikes per station within 0.5 of
-    (lon, lat) coordinate (value)
+    (lon, lat) coordinate (value) and list of distances
     """
     bikes, stations = get_available_stationbikes()
     stations_coordinates = list(stations.keys())
-    tree = KDTree(stations_coordinates)
-    nearest_stations_ix = tree.query_ball_point((lon, lat), 0.5)
-    nearest_stations = [stations_coordinates[i] for i in nearest_stations_ix]
-    nearest_bikes = {station: bikes.get(stations.get(station)) for station in nearest_stations
-                     if bikes.get(stations.get(station)) > 0}
+    dist = DistanceMetric.get_metric('haversine')
+    tree = BallTree(np.array(stations_coordinates), metric=dist)
 
-    return nearest_bikes
+    # nearest_stations_ix = tree.query_ball_point((lon, lat), 0.5)
+    dist, nearest_stations_ix = tree.query(np.array([(lon, lat)]), 5)
+    nearest_stations = [stations_coordinates[i] for i in nearest_stations_ix[0]]
+    nearest_bikes = {station: bikes.get(stations.get(station), 0) for station in nearest_stations}
+
+    return nearest_bikes, dist
 
 
 def find_nearest_freebikes(lon: float, lat: float):
-    """Return list of coordinates to the nearest free bikes (not locked to a station)"""
+    """Return list of coordinates to the nearest free bikes (not locked to a station), and distance"""
     freebikes = get_available_freebikes()
     bikes = [(bike.get('lon'), bike.get('lat')) for bike in freebikes if
              (bike.get('is_reserved') == 0 and bike.get('is_disabled') == 0)]
-    tree = KDTree(bikes)
-    nearest_bikes_ix = tree.query_ball_point((lon, lat), 0.5)
+    dist = DistanceMetric.get_metric('haversine')
+    tree = BallTree(np.array(bikes), metric=dist)
+    # nearest_bikes_ix = tree.query_ball_point((lon, lat), 0.5)
+    dist, nearest_bikes_ix = tree.query(np.array([(lon, lat)]), 5)
 
-    return [bikes[i] for i in nearest_bikes_ix]
+    return [bikes[i] for i in nearest_bikes_ix[0]], dist
 
 
 if __name__ == "__main__":
-    print(get_available_stationbikes())
+    print(find_nearest_freebikes(13.384524, 52.453312))
+    print(find_nearest_bikestations(13.384524, 52.453312))

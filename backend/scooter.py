@@ -2,6 +2,8 @@ import requests
 import json
 import os
 from scipy.spatial import KDTree
+from sklearn.neighbors import DistanceMetric, BallTree
+import numpy as np
 
 def get_scooters_batch(url):
     # Request parameters
@@ -86,16 +88,17 @@ def reduce_dataset():
 
 
 def find_nearest_tier(lon: float, lat: float):
-    """Return list of coordinates to the nearest scooters"""
+    """Return list of coordinates to the nearest scooters and list of distances"""
     with open(os.path.join('data', 'tier_fleet_locations.json'), 'r') as fd:
         fleet = json.load(fd).get('data')[0]
 
     scooters = [val for val in fleet.values()]
-    tree = KDTree(scooters)
-    nearest_scooters_ix = tree.query_ball_point((lon, lat), 0.005)
+    dist = DistanceMetric.get_metric('haversine')
+    tree = BallTree(np.array(scooters), metric=dist)
+    dist, nearest_scooters_ix = tree.query(np.array([(lon, lat)]), 5)
 
-    return [scooters[i] for i in nearest_scooters_ix]
+    return [scooters[i] for i in nearest_scooters_ix[0]], dist
 
 
-# if __name__ == "__main__":
-#     reduce_dataset()
+if __name__ == "__main__":
+    print(find_nearest_tier(13.384524, 52.453312))
