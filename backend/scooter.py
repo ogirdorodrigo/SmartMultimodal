@@ -1,6 +1,7 @@
 import requests
 import json
-from os.path import join as pjoin
+import os
+from scipy.spatial import KDTree
 
 def get_scooters_batch(url):
     # Request parameters
@@ -16,6 +17,7 @@ def get_scooters_batch(url):
     next_url = data.get('links').get('next')
 
     return trips, next_url
+
 
 def download_tier_dataset():
     """Tier provides only a static dataset containing the following fields for each trip of the corresponding
@@ -45,21 +47,55 @@ def download_tier_dataset():
     i = 0
     # Entry point to Tier complete dataset
     url = "https://platform.tier-services.io/mds/BERLIN/trips"
-    f = open(pjoin('..', 'data', 'tier_scooters.json'), 'a')
+    with open(os.path.join('..', 'data', 'tier_scooters.json'), 'w') as f:
+        f.write('{"data": ')
+
     while next_page:
         try:
             new_batch, url = get_scooters_batch(url)
         except:
-            next_page = False
+            break
         dataset += new_batch
         i += 1
         print(i, len(dataset))
-        json.dump(new_batch, f)
 
-    f.close()
+    with open(os.path.join('..', 'data', 'tier_scooters.json'), 'a') as f:
+        json.dump(dataset, f)
+        f.write('}')
 
     return dataset
 
 
-if __name__ == "__main__":
-    download_tier_dataset()
+def reduce_dataset():
+    with open(os.path.join('..', 'data', 'tier_scooters.json'), 'r') as f:
+        data = json.load(f)
+    fleet = dict()
+    for scooter in data.get('data'):
+        if fleet.get(scooter.get('vehicle_id')) is None:
+            fleet[scooter.get('vehicle_id')] = scooter
+
+    with open(os.path.join('..', 'data', 'tier_fleet.json'), 'w') as f:
+        json.dump({'data': [fleet]}, f)
+
+    fleet_location = {scooter: tuple(fleet[scooter].get('route').get('features')[0].get('geometry').get('coordinates')) for scooter in fleet}
+
+    with open(os.path.join('..', 'data', 'tier_fleet_locations.json'), 'w') as f:
+        json.dump({'data': [fleet_location]}, f)
+
+    return fleet
+
+
+def find_nearest_tier(lon: float, lat: float):
+    """Return list of coordinates to the nearest scooters"""
+    with open(os.path.join('data', 'tier_fleet_locations.json'), 'r') as fd:
+        fleet = json.load(fd).get('data')[0]
+
+    scooters = [val for val in fleet.values()]
+    tree = KDTree(scooters)
+    nearest_scooters_ix = tree.query_ball_point((lon, lat), 0.005)
+
+    return [scooters[i] for i in nearest_scooters_ix]
+
+
+# if __name__ == "__main__":
+#     reduce_dataset()
