@@ -1,7 +1,6 @@
 import requests
 import json
 import os
-from scipy.spatial import KDTree
 from sklearn.neighbors import DistanceMetric, BallTree
 import numpy as np
 
