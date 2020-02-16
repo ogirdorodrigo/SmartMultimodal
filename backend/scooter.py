@@ -88,7 +88,7 @@ def reduce_dataset():
 
 def find_nearest_tier(lon: float, lat: float):
     """Return list of coordinates to the nearest scooters and list of distances"""
-    with open(os.path.join('data', 'tier_fleet_locations.json'), 'r') as fd:
+    with open(os.path.join('..', 'data', 'tier_fleet_locations.json'), 'r') as fd:
         fleet = json.load(fd).get('data')[0]
 
     scooters = [val for val in fleet.values()]
